@@ -147,7 +147,19 @@ images with the extra palette bit (15-bit) are displayed on ST with the
 extra bit ignored.
 
 
-# The MPP file format
+## MPP decoding and displaying library (MPPDEC.S)
+
+This library is useful in user code to decode and display MPP
+image files from memory.
+
+The user code must allocate sufficient
+memory space for storing the corresponding image(s) and palette
+data. Memory space depends on the number of images (and palettes)
+in the file, and if a single palette has to be split in two
+(extended 15-bit palette on the STe, or STe palette on the ST).
+
+
+## The MPP file format
 
 An MPP file consists of a 12-byte header providing the image encoding, palette
 format and number of images. The header format is the following.
@@ -183,8 +195,7 @@ divided by two.
 In the case of double image mode, follows a second palette and image pair.
 
 
-The MPP extra header information
-================================
+### The MPP extra header information
 
 If the `extra_len` header value is not zero, then a MPPH block follows. It
 is very similar to what the SNDH header information is for Atari SND files.
