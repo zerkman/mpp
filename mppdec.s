@@ -305,8 +305,6 @@ tad:	move.b	#100,$fffffa1f.w
 	clr.l	$ffff8258.w
 	clr.l	$ffff825c.w
 
-	st	Vsync                    ; Synchronisation
-
 mpp_hbl:
 	rte
 
@@ -318,8 +316,6 @@ mpp_timer_a:
 	move.l	plug(a0),a0
 	jsr	plug_timera(a0)
 	bsr	next_pic
-
-	jsr	MUSIC+8
 
 	movem.l	(sp)+,d0-a6
 	rte
