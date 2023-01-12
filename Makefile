@@ -1,5 +1,5 @@
 
-TARGETS=mppview.tos bmp2mpp mpp2bmp
+TARGETS=bmp2mpp mpp2bmp
 
 AS=vasmm68k_mot
 LD=vlink
@@ -7,7 +7,7 @@ ASOPT=-quiet -m68000 -Fvobj
 LDOPT=-bataritos -s
 CC=gcc
 CFLAGS=-O3 -g -Wall
-LDFLAGS=-lm
+LDLIBS=-lm
 CXXFLAGS=-O3 -g -Wall
 
 all: $(TARGETS)
