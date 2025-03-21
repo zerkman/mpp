@@ -41,13 +41,6 @@ lnsize:	equ	230
 	move.b	$fffffa13.w,(a0)+
 	move.b	$fffffa15.w,(a0)+
 	move.b	$fffffa17.w,(a0)+
-	move.b	$fffffa19.w,(a0)+
-	move.b	$fffffa1b.w,(a0)+
-	move.b	$fffffa1d.w,(a0)+
-	move.b	$fffffa1f.w,(a0)+
-	move.b	$fffffa21.w,(a0)+
-	move.b	$fffffa23.w,(a0)+
-	move.b	$fffffa25.w,(a0)+
 
 	move.l	sp,savesp
 
@@ -101,13 +94,6 @@ exit:
 	move.b	(a0)+,$fffffa13.w
 	move.b	(a0)+,$fffffa15.w
 	move.b	(a0)+,$fffffa17.w
-	move.b	(a0)+,$fffffa19.w
-	move.b	(a0)+,$fffffa1b.w
-	move.b	(a0)+,$fffffa1d.w
-	move.b	(a0)+,$fffffa1f.w
-	move.b	(a0)+,$fffffa21.w
-	move.b	(a0)+,$fffffa23.w
-	move.b	(a0)+,$fffffa25.w
 
 	move	#$2300,sr
 
