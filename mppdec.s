@@ -23,7 +23,8 @@ plug_init			equ	18
 plug_palette_unpack		equ	22
 plug_timera			equ	26
 
-flag_steonly			equ	$1
+flag_nshiftmask			equ	$7	; number of calls to nextshift at init
+flag_steonly			equ	$8	; STE only mode
 
 ; MPP viewer structure
 	rsreset
@@ -273,7 +274,7 @@ mpp_setup_img:
 	move.l	plug(a1),a0
 	move.l	palp0(a1),plug_pal_adr(a0)
 	lea	tad+2(pc),a2
-	move	plug_timera_data(a0),(a2)
+	move	#$c2,(a2)
 
 	jsr	plug_init(a0)
 
@@ -283,17 +284,19 @@ mpp_setup_img:
 	lea	mpp_vbl(pc),a0		; Launch VBL
 	move.l	a0,$70.w		;
 
-	lea	mpp_timer_a(pc),a0
+	lea	mpp_timer_a_cfg(pc),a0
 	move.l	a0,$134.w
-	bset    #5,$fffffa07.w
-	bset    #5,$fffffa13.w
+	move.b	#$20,$fffffa07.w
+	clr.b	$fffffa09.w
+	move.b	#$20,$fffffa13.w
+	clr.b	$fffffa15.w
 
 	rts
 
 
 mpp_vbl:
 	clr.b	$fffffa19.w
-tad:	move.b	#100,$fffffa1f.w
+tad:	move.b	#$c2,$fffffa1f.w
 	move.b	#$4,$fffffa19.w
 
 	clr.l	$ffff8240.w
@@ -308,14 +311,79 @@ tad:	move.b	#100,$fffffa1f.w
 mpp_hbl:
 	rte
 
+mpp_timer_a_cfg:
+	clr.b	$fffffa19.w
+	bclr.b	#5,$fffffa0f.w
+	move	#$2300,sr
+	movem.l	d2-d5/a2,-(sp)
+
+	moveq	#0,d5
+	moveq	#12,d3
+	moveq	#4,d2
+	stop	#$2100
+tacglp:
+	stop	#$2100
+	moveq	#0,d4
+	move.b	$ffff8209.w,d4
+	sub.b	d3,d4
+	subq	#4,d4
+	neg	d4
+	add.b	#$a0,d3
+	lsr	#2,d5
+	lsl	#7,d4
+	or	d4,d5
+	dbra	d2,tacglp
+
+	lea	snval(pc),a2
+	move	d5,(a2)
+
+	lea	mpp_timer_a(pc),a2
+	move.l	a2,$134.w
+	move.l	mppstr(pc),a2
+	move.l	plug(a2),a2
+	move	plug_timera_data(a2),d2
+	moveq	#flag_nshiftmask,d4
+	and	plug_flags(a2),d4	; number of calls to nextshift
+	lea	tad+2(pc),a2
+	move	d2,(a2)
+
+	subq	#1,d4
+tacnslp:
+	bsr	mpp_nextshift
+	dbra	d4,tacnslp
+	movem.l	(sp)+,d2-d5/a2
+
+	rte
+
+mpp_nextshift:
+	lea	snval(pc),a2
+	move	(a2),d2
+	moveq	#$3f,d3
+	and	d2,d3
+	lsl	#4,d3
+	lsr	#6,d2
+	or	d3,d2
+	move	d2,(a2)
+
+	rts
+
 mpp_timer_a:
 	clr.b	$fffffa19.w
 	bclr.b	#5,$fffffa0f.w
 	movem.l	d0-a6,-(sp)
 	move.l	mppstr(pc),a0
 	move.l	plug(a0),a0
+	stop	#$2100
+	stop	#$2100
+	move	#$2700,sr
+	moveq	#3,d0
+	and	snval(pc),d0
+	add	d0,d0
+	lsr	d0,d0
+
 	jsr	plug_timera(a0)
 	bsr	next_pic
+	bsr	mpp_nextshift
 
 	movem.l	(sp)+,d0-a6
 	rte
@@ -329,7 +397,6 @@ next_pic:
 	move.l	mppstr(pc),a0
 	and.b	dbifg(a0),d3
 	move.l	picp0(a0,d3.w),d0	; picp0 or picp1
-	sub.l	#$a0,d0			; fix address to first hw line
 	and.b	dbpfg(a0),d2
 	move.l	palp0(a0,d2.w),d1	; palp0 or palp1
 
@@ -396,3 +463,4 @@ mode3:	include	"mode3.s"
 mch:	ds.w	1		; machine type
 flick:	ds.w	1		; flick flag
 mppstr:	ds.l	1		; current MPP stucture
+snval:	ds.w	1		; video synclock value

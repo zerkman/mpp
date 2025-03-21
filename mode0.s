@@ -1,7 +1,7 @@
 ;---------------------------------------------------------------------
 ;	Multipalette routine.
 ;	by Zerkman / Sector One
-;	mode 0: 320x199, CPU based, displays 54 colors per scanline
+;	mode 0: 320x200, CPU based, displays 54 colors per scanline
 ;		with non-uniform repartition of color change positions.
 ;---------------------------------------------------------------------
 
@@ -15,12 +15,12 @@
 ; Plugin header.
 m0_begin:
 	dc.w	320			; width
-	dc.w	199			; height
+	dc.w	200			; height
 	dc.w	54			; colors per scanline
 	dc.w	52			; stored colors per scanline
 	dc.w	160			; physical screen line size in bytes
-	dc.w	100			; timer A data
-	dc.w	0			; default flags
+	dc.w	189			; timer A data
+	dc.w	4			; flags: 4 calls to nextshift
 m0_pal:	dc.l	0			; palette address
 	bra.w	m0_init
 	bra.w	m0_palette_unpack
@@ -32,7 +32,7 @@ m0_tab:	bra.w	m0_timera1
 ; a5: get_color function
 ; d5-d7/a4-a6 : reserved for get_color function
 m0_palette_unpack:
-	move	#198,d2			; line counter
+	move	#200-1,d2		; line counter
 m0_pu_newline:
 	clr	(a0)+			; set color 0 to black
 	moveq	#51,d1			; 54 colors per line, -2 always black
@@ -63,18 +63,12 @@ m0_init:
 	rts
 
 m0_timera1:
-m0_tstsync0:
-	move.b	$ffff8209.w,d0
-	beq.s	m0_tstsync0
-	neg.b	d0
-	lsr.l	d0,d0
-
 	move.l	m0_pal(pc),a0
 	lea	$ffff8240.w,a1
-	move	#198,d0
+	move	#200-1,d0
 
-	rept	23+8
-	nop
+	rept	23
+	or.l	d0,d0
 	endr
 
 m0_spcbcl:

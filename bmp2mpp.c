@@ -20,7 +20,6 @@
 
 #define MAX_NCOLORS 64
 #define MAX_WIDTH 416
-#define MAX_HEIGHT 274
 #define MAX_XDELTA 160
 
 #define DEFAULT_OPT_LEVEL 3
@@ -57,7 +56,7 @@ Mode modes[4] = {
   { 0, 54, 0, 32, xinc0, 148, 320, 200 },
   { 1, 48, 0,  8, xinc1, 160, 320, 200 },
   { 2, 64, 0,  4, xinc2, 128, 320, 200 },
-  { 3, 54, 6, 68, xinc3, 160, 416, 274 },
+  { 3, 54, 6, 68, xinc3, 160, 416, 276 },
 };
 
 #define IMAX(x) (16-((x>0)&&(first[x-1]!=first[x])))
@@ -597,10 +596,10 @@ int usage(const char *progname) {
 "  -9\t\t\tOptimize better (default optimization = "STR(DEFAULT_OPT_LEVEL)")\n"
 "  --optimal\t\tFind the optimal solution\n"
 "  --mode=VALUE\t\tPalette and screen mode\n"
-"\t\t\t0: 320x199, 54 colors/scanline, ST/STE (default)\n"
-"\t\t\t1: 320x199, 48 colors/scanline, ST/STE, uniform\n"
-"\t\t\t2: 320x199, 56 colors/scanline, STE\n"
-"\t\t\t3: 416x273, 48+6 colors/scanline, ST/STE, overscan\n"
+"\t\t\t0: 320x200, 54 colors/scanline, ST/STE (default)\n"
+"\t\t\t1: 320x200, 48 colors/scanline, ST/STE, uniform\n"
+"\t\t\t2: 320x200, 56 colors/scanline, STE\n"
+"\t\t\t3: 416x276, 48+6 colors/scanline, ST/STE, overscan\n"
 "  --st\t\t\tUse 9-bit ST palette (default in modes 0, 1, 3)\n"
 "  --ste\t\t\tUse 12-bit STE palette (default in mode 2)\n"
 "  --extra\t\tAdd extra palette bit (single image)\n"
@@ -655,16 +654,16 @@ void convert(FILE *fd, const unsigned char *bmp, const Mode *mode, int bits,
   unsigned short *bitmap, *pbitmap;
   unsigned int tmpcol;
   pixels = malloc(mode->width*mode->height);
-  palette = malloc(mode->height*(mode->ncolors-mode->nfixed)*sizeof(unsigned short));
-  bitmap = malloc(mode->width/4*(mode->height-1)*sizeof(unsigned short));
+  palette = malloc((mode->height+1)*(mode->ncolors-mode->nfixed)*sizeof(unsigned short));
+  bitmap = malloc(mode->width/4*mode->height*sizeof(unsigned short));
   MEM_ERROR(pixels);
   MEM_ERROR(palette);
   MEM_ERROR(bitmap);
 
   memset(palette, 0, (mode->ncolors-mode->nfixed)*sizeof(palette[0]));
-  for (y=1; y<mode->height; ++y) {
+  for (y=0; y<mode->height; ++y) {
     const unsigned char *pbmp = &bmp[mode->width*3*(mode->height-1-y)];
-    unsigned short *ppal = &palette[y*(mode->ncolors-mode->nfixed)-mode->nfixed];
+    unsigned short *ppal = &palette[(y+1)*(mode->ncolors-mode->nfixed)-mode->nfixed];
     unsigned short line[MAX_WIDTH];
     int val, special = 0;
 
@@ -684,7 +683,7 @@ void convert(FILE *fd, const unsigned char *bmp, const Mode *mode, int bits,
       r += r < (1<<bits)-1 && (t&mask) != 0;
       line[x] = (r << 10) | (g << 5) | b;
     }
-    if (y==229) {
+    if (y==229 || y==274) {
       memcpy(ppal+12, ppal-4, 4*sizeof(unsigned short));
       special = 1;
     }
@@ -696,7 +695,7 @@ void convert(FILE *fd, const unsigned char *bmp, const Mode *mode, int bits,
     if (val && optimal) {
       val = exact(pixels+y*mode->width, ppal, mode, line, val);
     }
-      penalty1 += val;
+    penalty1 += val;
     if (val && err)
       printf("y=%d error=%d          \n", y, val);
     if (opt) {
@@ -721,13 +720,14 @@ void convert(FILE *fd, const unsigned char *bmp, const Mode *mode, int bits,
   else
     printf("Error penalty: %d.\n", penalty0);
 
-  ppix = &pixels[mode->width];
+  // ppix = &pixels[mode->width];
+  ppix = pixels;
   pbitmap = bitmap;
   npal = 0;
   nbits = 0;
   bpp = 3*bits;
   tmpcol = 0;
-  for (y=1; y<mode->height; ++y) {
+  for (y=0; y<mode->height; ++y) {
     for (x=0; x<mode->width; x+=16) {
       unsigned short b0=0, b1=0, b2=0, b3=0;
       for (i=0; i<16; ++i) {
@@ -744,7 +744,7 @@ void convert(FILE *fd, const unsigned char *bmp, const Mode *mode, int bits,
       pbitmap += 4;
     }
     for (x=0; x<(mode->ncolors-mode->nfixed); ++x) {
-      unsigned short c = palette[y*(mode->ncolors-mode->nfixed)+x], ex;
+      unsigned short c = palette[(y+1)*(mode->ncolors-mode->nfixed)+x], ex;
       switch (bits) {
         case 3:
           if (raw_palette)
@@ -793,13 +793,13 @@ void convert(FILE *fd, const unsigned char *bmp, const Mode *mode, int bits,
     write16(&palette[npal++], tmpcol << (16-nbits));
 
   if (raw_palette) {
-    fwrite(bitmap, 2, (mode->width/4)*(mode->height-1), fd);
+    fwrite(bitmap, 2, (mode->width/4)*mode->height, fd);
     fwrite(palette+(mode->ncolors-mode->nfixed), 2*(mode->ncolors-mode->nfixed),
-        (mode->height-1), fd);
+        mode->height, fd);
   }
   else {
     fwrite(palette, 2, npal, fd);
-    fwrite(bitmap, 2, (mode->width/4)*(mode->height-1), fd);
+    fwrite(bitmap, 2, (mode->width/4)*mode->height, fd);
   }
   free(bitmap);
   free(palette);

@@ -1,7 +1,7 @@
 ;---------------------------------------------------------------------
 ;	Multipalette routine.
 ;	by Zerkman / Sector One
-;	mode 2: 320x199, blitter based, displays 56 colors per scanline
+;	mode 2: 320x200, blitter based, displays 56 colors per scanline
 ;		with uniform repartition of color change positions.
 ;---------------------------------------------------------------------
 
@@ -15,12 +15,12 @@
 ; Plugin header.
 m2_begin:
 	dc.w	320			; width
-	dc.w	199			; height
+	dc.w	200			; height
 	dc.w	64			; colors per scanline
 	dc.w	54			; stored colors per scanline
 	dc.w	160			; physical screen line size in bytes
-	dc.w	100			; timer A data
-	dc.w	1			; STe only
+	dc.w	189			; timer A data
+	dc.w	flag_steonly+4		; STe only + 4 calls to nextshift
 m2_pal:	dc.l	0			; palette address
 	bra.w	m2_init
 	bra.w	m2_palette_unpack
@@ -32,7 +32,7 @@ m2_tab:	bra.w	m2_timera1
 ; a5: get_color function
 ; d5-d7/a4-a6 : reserved for get_color function
 m2_palette_unpack:
-	move	#198,d2			; line counter
+	move	#200-1,d2		; line counter
 m2_pu_newline:
 	clr	(a0)+			; set color 0 to black
 	moveq	#54,d1			; 56 colors per line, -2 always black
@@ -72,51 +72,21 @@ m2_init:
 	move.b	#3,$ffff8a3b.w		; logical operation (3=source)
 	move.b	#0,$ffff8a3d.w		; skew
 
+	move	mch(pc),d0
+	cmp	#2,d0			; Mega STE?
+	bne.s	m2iste
+	move	#$4e71,m2_stetm		; replace one or.l with nop to adapt to blitter timing
+m2iste:
 	rts
 
 m2_timera1:
-
-m2_tstsync0:
-	move.b	$ffff8209.w,d0
-	beq.s	m2_tstsync0
-	eor	#$f,d0
-	lsr.l	d0,d0
-
-	move.l	m2_pal(pc),$ffff8a24.w	; source address register
-	move.l	#$ffff8240,$ffff8a32.w	; destination address register
-
-	move	#1,$ffff8a38.w		; y count
-	move.b	#$c0,$ffff8a3c.w	; line number register = busy, hog bus
-
-	move.b	$ffff8209.w,d0
-	cmp.b	#$90,d0
-	beq.s	m2_ts0ste
-
-; Mega STE blitter detected. Blitter must be started 4 cycles before STE timing.
-	lea	m2_stetm(pc),a0
-	move	#$4e71,(a0)		; change or.l (8 cycles) with nop (4 cycles)
-
-m2_ts0ste:
-	lea	m2_timer_a(pc),a0
-	lea	m2_tab+2(pc),a1
-	sub.l	a1,a0
-	move.w	a0,(a1)
-	rts
-
-m2_timer_a:
-
-m2_tstsync:
-	move.b	$ffff8209.w,d0
-	beq.s	m2_tstsync
-	neg.b	d0
-	lsr.l	d0,d0
-
 	move.l	m2_pal(pc),$ffff8a24.w	; source address register
 	move.l	#$ffff8240,$ffff8a32.w	; destination address register
 m2_stetm:
-	rept	20
+	rept	27
 	or.l	d0,d0
 	endr
-	move	#796,$ffff8a38.w	; y count (HBL=63, LineCycles=428)
+	nop
+	move	#200*4,$ffff8a38.w	; y count (HBL=62, LineCycles=428)
 	move.b	#$c0,$ffff8a3c.w	; line number register = busy, hog bus
 	rts
