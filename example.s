@@ -33,8 +33,6 @@ lnsize:	equ	230
 	move.b	$ffff8260.w,(a0)+
 	move.l	$68.w,(a0)+
 	move.l	$70.w,(a0)+
-	move.l	$114.w,(a0)+
-	move.l	$120.w,(a0)+
 	move.l	$134.w,(a0)+
 	move.b	$fffffa07.w,(a0)+
 	move.b	$fffffa09.w,(a0)+
@@ -45,22 +43,9 @@ lnsize:	equ	230
 	move.l	sp,savesp
 
 	bsr	mpp_init
-; *** Initialise the MPP struct
-; screen buffers
-	move.l	#screen+256,d0
-	clr.b	d0
-	move.l	d0,a0
-	lea	imgstr,a1
-	move.l	a0,picp0(a1)
-	add.l	#(lnsize*nlines+254)&-256,a0
-	move.l	a0,picp1(a1)
-; palette buffers
-	lea	palett,a0
-	move.l	a0,palp0(a1)
-	add.l	#nlines*48*2,a0
-	move.l	a0,palp1(a1)
 
 ; *** Decode the MPP file
+	lea	imgbuf,a1
 	lea	image(pc),a0
 	bsr	mpp_decode
 
@@ -86,8 +71,6 @@ exit:
 	move.b	(a0)+,$ffff8260.w
 	move.l	(a0)+,$68.w
 	move.l	(a0)+,$70.w
-	move.l	(a0)+,$114.w
-	move.l	(a0)+,$120.w
 	move.l	(a0)+,$134.w
 	move.b	(a0)+,$fffffa07.w
 	move.b	(a0)+,$fffffa09.w
@@ -114,6 +97,4 @@ image:	incbin	"image.mpp"
 
 	section	bss
 savesp:	ds.l	1
-imgstr:	ds.b	mppstrsize
-screen:	ds.b	2*(lnsize*nlines+254)
-palett:	ds.b	2*(nlines*48*2)
+imgbuf:	ds.b	mppstrsize+2*(lnsize*nlines+254)+2*(nlines*48*2)

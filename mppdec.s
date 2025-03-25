@@ -45,7 +45,7 @@ mpp_init:
 
 ; Decode a MPP file
 ; a0: (i) file address
-; a1: (i) address of MPP stucture initialized with necessary pointers
+; a1: (i) address of MPP stucture and necessary buffers following
 mpp_decode:
 	move.l	a0,a3		; store header address
 	move.l	a0,a4		; source stream pointer
@@ -58,6 +58,26 @@ mpp_decode:
 	lea	plugins(pc),a6
 	add	(a6,d0.w),a6	; plugin header address
 	move.l	a6,plug(a1)
+
+	move	plug_line_size(a6),d1
+	mulu	plug_height(a6),d1	; screen size
+	move.l	a1,d0
+	add.l	#mppstrsize+254,d0
+	clr.b	d0		; first screen address
+	move.l	d0,picp0(a1)
+	add.l	d1,d0		; end of screen address
+	btst	#2,4(a3)	; double image ?
+	beq.s	ndbi
+	add.l	#254,d0
+	clr.b	d0		; second screen address
+	move.l	d0,picp1(a1)
+	add.l	d1,d0		; end of screen
+ndbi:	move.l	d0,palp0(a1)	; first palette
+	move	plug_colors_per_scanline(a6),d1
+	mulu	plug_height(a6),d1
+	add.l	d1,d1
+	add.l	d1,d0
+	move.l	d0,palp1(a1)	; second palette address even if not used
 
 	move	plug_flags(a6),d0
 	and	#flag_steonly,d0
