@@ -19,7 +19,7 @@ mpp2bmp: mpp2bmp.o pixbuf.o
 
 spec.o: spec.s #out.bin
 
-mppview.tos: mppview.s mode0.s mode1.s mode2.s mode3.s
+mppview.tos: mppview.s mppdec.s mode0.s mode1.s mode2.s mode3.s
 
 %.tos: %.s
 	$(AS) $(ASOPT) $< -o $@
