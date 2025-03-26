@@ -82,9 +82,10 @@ ndbi:	move.l	d0,palp0(a1)	; first palette
 	move	plug_flags(a6),d0
 	and	#flag_steonly,d0
 	beq.s	mlvf0
-	tst.b	$1fe.w		; test if STe only and machine == ST
+	move	mch(pc),d0	; test if STe only and machine == ST
 	bne.s	mlvf0
-	illegal
+	moveq	#-1,d0
+	rts
 mlvf0:
 
 	move.b	4(a3),d0	; flags
@@ -203,6 +204,7 @@ exbl4:	addq.l	#2,a0
 	dbra	d1,exblln
 
 noxtr2:
+	moveq	#0,d0
 	rts
 
 
