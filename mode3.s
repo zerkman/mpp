@@ -21,6 +21,40 @@ nops	macro	1
 	endr
 	endm
 
+; common code in all scanlines
+scanline_base	macro
+	move	a3,(a3)		; LineCycles = 0 -> 8
+	move.b	d0,(a3)		; LineCycles = 8 -> 16
+	movem.l	(a0)+,d2-d7/a4-a5	; 19
+	movem.l	d2-d7/a4-a5,(a1)	; 18
+	movem.l	(a0)+,d0-d7/a4-a6	; 25
+	movem.l	d0-d7,(a1)		; 18
+	movem.l	a4-a6,(a1)		; 8
+	moveq	#0,d0		; LineCycles = 368 -> 372
+	move.b	d0,(a2)		; LineCycles = 372 -> 380
+	move	a2,(a2)		; LineCycles = 380 -> 388
+	movem.l	(a0)+,d1-d5	; 13
+	move	a3,(a3)		; LineCycles = 440 -> 448
+	nop
+	move.b	d0,(a3)		; LineCycles = 452 -> 460
+	endm
+
+; normal scanline 48 colours
+scanline_normal	macro
+	scanline_base
+	movem.l	d1-d5,(a7)	; 12
+	nop
+	endm
+
+; special scanline (with vertical border opening), 44 colours only
+scanline_special	macro
+	scanline_base
+	move.b	d0,(a2)
+	movem.l	d1-d3,(a7)	; 8
+	move	a2,(a2)
+	nop
+	endm
+
 ; Plugin header.
 m3_begin:
 	dc.w	416			; width
@@ -59,8 +93,6 @@ m3_init:
 	rts
 
 m3_timera1:
-
-; HBL=33
 	move.l	a7,usp
 	move.l	m3_pal(pc),a0
 	lea	$ffff8240.w,a1
@@ -79,119 +111,19 @@ m3_timera1:
 
 
 	rept	228
-	move	a3,(a3)		; LineCycles = 0 -> 8
-	move.b	d0,(a3)		; LineCycles = 8 -> 16
-	movem.l	(a0)+,d2-d7/a4-a5	; 19
-	movem.l	d2-d7/a4-a5,(a1)	; 18
-	movem.l	(a0)+,d0-d7/a4-a6	; 25
-	movem.l	d0-d7,(a1)		; 18
-	movem.l	a4-a6,(a1)		; 8
-	moveq	#0,d0		; LineCycles = 368 -> 372
-	move.b	d0,(a2)		; LineCycles = 372 -> 380
-	move	a2,(a2)		; LineCycles = 380 -> 388
-	movem.l	(a0)+,d1-d5	; 13
-	move	a3,(a3)		; LineCycles = 440 -> 448
-	nop
-	move.b	d0,(a3)		; LineCycles = 452 -> 460
-	movem.l	d1-d5,(a7)	; 12
-	nop
+	scanline_normal
 	endr
 
-	move	a3,(a3)		; LineCycles = 0 -> 8
-	move.b	d0,(a3)		; LineCycles = 8 -> 16
-	movem.l	(a0)+,d2-d7/a4-a5	; 19
-	movem.l	d2-d7/a4-a5,(a1)	; 18
-	movem.l	(a0)+,d0-d7/a4-a6	; 25
-	movem.l	d0-d7,(a1)		; 18
-	movem.l	a4-a6,(a1)		; 8
-	moveq	#0,d0		; LineCycles = 368 -> 372
-	move.b	d0,(a2)		; LineCycles = 372 -> 380
-	move	a2,(a2)		; LineCycles = 380 -> 388
-	movem.l	(a0)+,d1-d5	; 13
-	move	a3,(a3)		; LineCycles = 440 -> 448
-	nop
-	move.b	d0,(a3)		; LineCycles = 452 -> 460
-	move.b	d0,(a2)
-	movem.l	d1-d3,(a7)	; 8
-	move	a2,(a2)
-	nop
+	scanline_special
 
 	rept	44
-	move	a3,(a3)		; LineCycles = 0 -> 8
-	move.b	d0,(a3)		; LineCycles = 8 -> 16
-	movem.l	(a0)+,d2-d7/a4-a5	; 19
-	movem.l	d2-d7/a4-a5,(a1)	; 18
-	movem.l	(a0)+,d0-d7/a4-a6	; 25
-	movem.l	d0-d7,(a1)		; 18
-	movem.l	a4-a6,(a1)		; 8
-	moveq	#0,d0		; LineCycles = 368 -> 372
-	move.b	d0,(a2)		; LineCycles = 372 -> 380
-	move	a2,(a2)		; LineCycles = 380 -> 388
-	movem.l	(a0)+,d1-d5	; 13
-	move	a3,(a3)		; LineCycles = 440 -> 448
-	nop
-	move.b	d0,(a3)		; LineCycles = 452 -> 460
-	movem.l	d1-d5,(a7)	; 12
-	nop
+	scanline_normal
 	endr
 
-	move	a3,(a3)		; LineCycles = 0 -> 8
-	move.b	d0,(a3)		; LineCycles = 8 -> 16
-	movem.l	(a0)+,d2-d7/a4-a5	; 19
-	movem.l	d2-d7/a4-a5,(a1)	; 18
-	movem.l	(a0)+,d0-d7/a4-a6	; 25
-	movem.l	d0-d7,(a1)		; 18
-	movem.l	a4-a6,(a1)		; 8
-	moveq	#0,d0		; LineCycles = 368 -> 372
-	move.b	d0,(a2)		; LineCycles = 372 -> 380
-	move	a2,(a2)		; LineCycles = 380 -> 388
-	movem.l	(a0)+,d1-d5	; 13
-	move	a3,(a3)		; LineCycles = 440 -> 448
-	nop
-	move.b	d0,(a3)		; LineCycles = 452 -> 460
-	move.b	d0,(a2)
-	movem.l	d1-d3,(a7)	; 8
-	move	a2,(a2)
-	nop
+	scanline_special
 
-	move	a3,(a3)		; LineCycles = 0 -> 8
-	move.b	d0,(a3)		; LineCycles = 8 -> 16
-	movem.l	(a0)+,d2-d7/a4-a5	; 19
-	movem.l	d2-d7/a4-a5,(a1)	; 18
-	movem.l	(a0)+,d0-d7/a4-a6	; 25
-	movem.l	d0-d7,(a1)		; 18
-	movem.l	a4-a6,(a1)		; 8
-	moveq	#0,d0		; LineCycles = 368 -> 372
-	move.b	d0,(a2)		; LineCycles = 372 -> 380
-	move	a2,(a2)		; LineCycles = 380 -> 388
-	movem.l	(a0)+,d1-d5	; 13
-	move	a3,(a3)		; LineCycles = 440 -> 448
-	nop
-	move.b	d0,(a3)		; LineCycles = 452 -> 460
-	movem.l	d1-d5,(a7)	; 12
-	nop
-
-	move	a3,(a3)		; LineCycles = 0 -> 8
-	move.b	d0,(a3)		; LineCycles = 8 -> 16
-	movem.l	(a0)+,d2-d7/a4-a5	; 19
-	movem.l	d2-d7/a4-a5,(a1)	; 18
-	movem.l	(a0)+,d0-d7/a4-a6	; 25
-	movem.l	d0-d7,(a1)		; 18
-	movem.l	a4-a6,(a1)		; 8
-	moveq	#0,d0		; LineCycles = 368 -> 372
-	move.b	d0,(a2)		; LineCycles = 372 -> 380
-	move	a2,(a2)		; LineCycles = 380 -> 388
-	nops	4
-	rept	3
-	clr.l	(a1)+
-	endr
-	move	a3,(a3)		; LineCycles = 440 -> 448
-	nop
-	move.b	d0,(a3)		; LineCycles = 452 -> 460
-
-	rept	5
-	clr.l	(a1)+
-	endr
+	scanline_normal
+	scanline_normal
 
 	move.l	usp,a7
 	move	#$2300,sr
